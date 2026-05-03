@@ -152,6 +152,37 @@ function barra(c=0,p=0,i=0,t){
 function leyenda(){
   return`<div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">${[["#16a34a","Consolidado"],["#d97706","En proceso"],["#dc2626","Incipiente"]].map(([c,l])=>`<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#475569;background:#fff;border:1px solid #e2e8f0;border-radius:7px;padding:4px 12px"><div style="width:10px;height:10px;border-radius:50%;background:${c}"></div>${l}</div>`).join("")}</div>`;
 }
+function semaforo(estudiantes,grado,area){
+  const inds=INDS[area][grado]||[];
+  if(!inds.length||!estudiantes.length)return`<span style="color:#cbd5e1;font-size:11px">—</span>`;
+  let c=0,p=0,i=0,total=0;
+  estudiantes.forEach(e=>{inds.forEach(ind=>{const v=e.indicadores?.[`${area}_${grado}_${ind}`];if(v){total++;if(v==="Consolidado")c++;else if(v==="En proceso")p++;else i++;}});});
+  if(!total)return`<span style="color:#cbd5e1;font-size:11px">—</span>`;
+  const pctC=Math.round(c/total*100),pctP=Math.round(p/total*100),pctI=Math.round(i/total*100);
+  let color,emoji,label;
+  if(pctC>=50){color="#16a34a";emoji="🟢";label=`${pctC}%`;}
+  else if(pctP>=50){color="#d97706";emoji="🟡";label=`${pctP}%`;}
+  else{color="#dc2626";emoji="🔴";label=`${pctI}%`;}
+  return`<div style="display:flex;align-items:center;gap:4px"><span style="font-size:14px">${emoji}</span><span style="font-size:10px;font-weight:700;color:${color}">${label}</span></div>`;
+}
+
+function semaforoEscuela(escId,area){
+  const ests=STATE.allData[escId]||[];
+  if(!ests.length)return`<span style="color:#cbd5e1;font-size:11px">—</span>`;
+  let c=0,p=0,i=0,total=0;
+  GRADOS.forEach(g=>{
+    const inds=INDS[area][g]||[];
+    ests.filter(e=>e.grado===g).forEach(e=>{inds.forEach(ind=>{const v=e.indicadores?.[`${area}_${g}_${ind}`];if(v){total++;if(v==="Consolidado")c++;else if(v==="En proceso")p++;else i++;}});});
+  });
+  if(!total)return`<span style="color:#cbd5e1;font-size:11px">—</span>`;
+  const pctC=Math.round(c/total*100),pctP=Math.round(p/total*100),pctI=Math.round(i/total*100);
+  let color,emoji,label;
+  if(pctC>=50){color="#16a34a";emoji="🟢";label=`${pctC}%`;}
+  else if(pctP>=50){color="#d97706";emoji="🟡";label=`${pctP}%`;}
+  else{color="#dc2626";emoji="🔴";label=`${pctI}%`;}
+  return`<div style="display:flex;align-items:center;gap:4px"><span style="font-size:14px">${emoji}</span><span style="font-size:10px;font-weight:700;color:${color}">${label}</span></div>`;
+}
+
 function loader(m="Cargando..."){return`<div class="loader"><div class="spinner"></div><p>${m}</p></div>`;}
 
 // ── GRÁFICO DE NIVELES ──────────────────────────────────
@@ -226,6 +257,7 @@ function vistaInicio(){
         <h1 style="font-family:'Playfair Display',serif;color:#fff;font-size:38px;margin:0 0 4px;line-height:1.1">Trayectorias Cuidadas</h1>
         <div style="color:#60a5fa;font-weight:700;font-size:16px;margin-bottom:6px">Sede de Inspección 5310 · Zona Oeste</div>
         <div style="color:#94a3b8;font-size:13px;margin-bottom:10px">Supervisora: <span style="color:#e2e8f0;font-weight:700">Gabriela de los Ángeles Navarrete</span></div>
+        <div style="color:#94a3b8;font-size:12px;margin-bottom:10px">Docente Facilitadora: <span style="color:#60a5fa;font-weight:700">Gabriela Pafume · Programa M+M</span></div>
         <p style="color:#64748b;font-size:14px;margin:0">Seguimiento nominal de trayectorias<br/>Instituciones Departamento Santa María · Lengua y Matemática · 1° a 6°</p>
       </div>
       <div style="background:#ffffff0d;border:1px solid #ffffff18;border-radius:18px;padding:22px;margin-bottom:12px">
@@ -539,11 +571,13 @@ function vistaSupervisor(){
     </div>
     <div style="background:#fff;border-radius:16px;padding:22px;box-shadow:0 2px 16px #0001">
       ${STATE.loading?loader("Cargando todas las escuelas..."):det+`<div style="overflow-x:auto"><table style="width:100%;border-collapse:separate;border-spacing:0;font-size:12px">
-        <thead><tr style="background:#1e293b"><th>Institución</th><th style="text-align:center">Alumnos</th>${inds.map(i=>`<th style="padding:8px 10px;color:#fff;font-size:10px;max-width:110px;white-space:normal;line-height:1.3;text-align:left">${i}</th>`).join("")}</tr></thead>
+        <thead><tr style="background:#1e293b"><th>Institución</th><th style="text-align:center">Alumnos</th><th style="text-align:center">📚 Lengua</th><th style="text-align:center">🔢 Matemática</th>${inds.map(i=>`<th style="padding:8px 10px;color:#fff;font-size:10px;max-width:110px;white-space:normal;line-height:1.3;text-align:left">${i}</th>`).join("")}</tr></thead>
         <tbody>${ESCUELAS.map((esc,idx)=>{const{total,porInd}=stats(esc.id);const ac=STATE.supSel?.id===esc.id;
           return`<tr style="background:${ac?"#eff6ff":idx%2===0?"#f8fafc":"#fff"};cursor:pointer" onclick="toggleSupSel('${esc.id}')">
             <td style="font-weight:700;color:#1e293b"><span style="margin-right:6px;color:#94a3b8;font-size:10px">${ac?"▼":"▶"}</span>${esc.nombre}</td>
             <td style="text-align:center;font-weight:700">${total>0?total:`<span style="color:#cbd5e1">—</span>`}</td>
+            <td style="text-align:center">${semaforoEscuela(esc.id,"lengua")}</td>
+            <td style="text-align:center">${semaforoEscuela(esc.id,"matematica")}</td>
             ${porInd.map(({c,p,i:iv,total:t})=>`<td>${barra(c,p,iv,t)}</td>`).join("")}
           </tr>`;}).join("")}
         </tbody>
