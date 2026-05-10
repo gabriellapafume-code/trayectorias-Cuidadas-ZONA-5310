@@ -33,7 +33,7 @@ document.dispatchEvent(new Event("firebaseReady"));
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Source Sans 3',sans-serif;background:#f1f5f9;min-height:100vh}
 input,select,textarea{width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;color:#1e293b;background:#f8fafc;font-family:'Source Sans 3',sans-serif}
-input:focus,select:focus,textarea:focus{outline:2px solid #3b82f6;border-color:#3b82f6}
+input:focus,select:focus,textarea:focus{outline:2px solid #a21caf;border-color:#a21caf}
 .btn-primary{background:#1e293b;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-weight:700;cursor:pointer;font-size:13px;font-family:'Source Sans 3',sans-serif}
 .btn-secondary{background:#f1f5f9;color:#475569;border:none;border-radius:10px;padding:10px 24px;font-weight:700;cursor:pointer;font-size:13px;font-family:'Source Sans 3',sans-serif}
 .btn-tab{padding:8px 20px;border-radius:8px;border:2px solid;font-weight:700;font-size:13px;cursor:pointer;font-family:'Source Sans 3',sans-serif}
@@ -57,6 +57,7 @@ td{padding:7px 10px;border-bottom:1px solid #e2e8f0;vertical-align:middle}
 <body>
 <div id="root"></div>
 <script>
+
 const ESCUELAS=[
   {id:"531173",nombre:"24 DE SETIEMBRE",cue:"EE0550917",app:""},
   {id:"531176",nombre:"ALFONSINA STORNI",cue:"EE0550929",app:""},
@@ -96,6 +97,7 @@ const ESCUELAS=[
 const GRADOS=["1°","2°","3°","4°","5°","6°"];
 const CORTES=["Mayo","Agosto","Diciembre"];
 const LOGRO=["Consolidado","En proceso","Incipiente"];
+const MARCAS=["CUD","PPI","MEMO2"];
 const NIV_ESCRITURA=["Diferenciada","Silábica","Silábica alfabética","Cuasialfabética","Alfabética"];
 const NIV_LECTURA_12=["Diferenciada","Silábica","Alfabética"];
 
@@ -118,10 +120,7 @@ const INDS={
   }
 };
 
-const MARCAS=["CUD","PPI","MEMO2"];
-const LOGRO_AJUSTE=["Logrado","En proceso","Requiere acompañamiento"];
-
-let STATE={modo:"inicio",escuela:null,tab:"carga",allData:{},loading:false,busq:"",modal:null,del:null,filtroGrado:"",busqEst:"",busqDNI:"",tablaGrado:"1°",supArea:"lengua",supGrado:"1°",supSel:null,corte:"Mayo",filtroMarca:"todos"};
+let STATE={modo:"inicio",escuela:null,tab:"carga",allData:{},loading:false,busq:"",busqDNI:"",modal:null,del:null,filtroGrado:"",busqEst:"",tablaGrado:"1°",supArea:"lengua",supGrado:"1°",supSel:null,corte:"Mayo",filtroMarca:"todos"};
 function setState(p){Object.assign(STATE,typeof p==="function"?p(STATE):p);render();}
 async function dbGet(k){return window.dbGet?window.dbGet(k):null;}
 async function dbSet(k,v){if(window.dbSet)await window.dbSet(k,v);}
@@ -136,6 +135,12 @@ function badgeNivel(v){
   const m={"Diferenciada":"#7c3aed","Silábica":"#db2877","Silábica alfabética":"#ea580c","Cuasialfabética":"#d97706","Alfabética":"#16a34a"};
   const col=m[v]||"#475569";
   return`<span style="background:${col}18;color:${col};border:1px solid ${col}44;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700">${v}</span>`;
+}
+function badgeMarca(marca){
+  if(!marca)return"";
+  const cols={"CUD":"#7c3aed","PPI":"#0ea5e9","MEMO2":"#ea580c"};
+  const col=cols[marca]||"#475569";
+  return`<span style="background:${col}18;color:${col};border:1px solid ${col}44;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:800">♿ ${marca}</span>`;
 }
 function barra(c=0,p=0,i=0,t){
   if(!t)return`<span style="color:#cbd5e1;font-size:11px">—</span>`;
@@ -162,22 +167,32 @@ function selectorCorte(){
   return`<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px">Corte:</span>${CORTES.map(c=>`<button onclick="setState({corte:'${c}'})" style="padding:5px 14px;border-radius:8px;border:1.5px solid;font-weight:700;font-size:12px;cursor:pointer;font-family:'Source Sans 3',sans-serif;border-color:${STATE.corte===c?"#a21caf":"#e2e8f0"};background:${STATE.corte===c?"#a21caf":"#fff"};color:${STATE.corte===c?"#fff":"#64748b"}">${c}</button>`).join("")}</div>`;
 }
 
+// ── VISTA INICIO ─────────────────────────────────────
 function vistaInicio(){
   const fl=ESCUELAS.filter(e=>e.nombre.toLowerCase().includes(STATE.busq.toLowerCase()));
   return`<div style="min-height:100vh;background:linear-gradient(160deg,#fdf2f8 0%,#f0abfc 45%,#a21caf 100%);display:flex;align-items:center;justify-content:center;padding:24px">
     <div style="width:100%;max-width:560px">
       <div style="text-align:center;margin-bottom:32px">
+
         <div style="display:inline-block;background:#ffffff30;border-radius:12px;padding:8px 20px;margin-bottom:14px;border:1px solid #ffffff40">
-          <span style="color:#4a044e;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase">Zona 5310 Oeste</span>
+          <span style="color:#4a044e;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase">Sede de Inspección 5310</span>
         </div>
+
         <h1 style="font-family:'Playfair Display',serif;color:#fff;font-size:38px;margin:0 0 4px;line-height:1.1;text-shadow:0 2px 8px #a21caf44">Trayectorias Cuidadas</h1>
-        <div style="color:#4a044e;font-weight:700;font-size:16px;margin-bottom:16px">Sede de Inspección 5310 · Zona Oeste</div>
-        <div style="background:#ffffff30;border-radius:14px;padding:14px 20px;margin-bottom:12px;border:1px solid #ffffff40">
+        <div style="color:#4a044e;font-weight:700;font-size:16px;margin-bottom:16px">Zona 5310 Oeste</div>
+
+        <!-- Supervisora -->
+        <div style="background:#ffffff30;border-radius:14px;padding:14px 20px;margin-bottom:8px;border:1px solid #ffffff40">
           <div style="font-size:11px;color:#4a044e;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Supervisora</div>
           <div style="font-family:'Playfair Display',serif;color:#fff;font-size:24px;font-weight:700;text-shadow:0 2px 8px #a21caf66">Gabriela de los Ángeles Navarrete</div>
         </div>
-        <div style="color:#4a044e;font-size:12px;margin-bottom:10px">Docente Facilitadora: <span style="color:#fff;font-weight:700">Gabriela Pafume · Programa M+M</span></div>
-        <div style="color:#4a044e;font-size:12px;margin-bottom:10px">Lic. en Educación · Especialista en Alfabetización · Desarrollo de Herramientas Digitales</div>
+
+        <!-- Gabriela Pafume -->
+        <div style="background:#ffffff18;border-radius:12px;padding:10px 18px;margin-bottom:12px;border:1px solid #ffffff25">
+          <div style="font-size:10px;color:#4a044e;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px">Licenciada en Educación</div>
+          <div style="font-family:'Playfair Display',serif;color:#fff;font-size:16px;font-weight:700">Gabriela Pafume</div>
+        </div>
+
         <p style="color:#4a044e;font-size:13px;margin:0">Seguimiento nominal de trayectorias<br/>Instituciones Departamento Santa María · Lengua y Matemática · 1° a 6°</p>
       </div>
 
@@ -207,6 +222,7 @@ function header(t,s){
   </div>`;
 }
 
+// ── VISTA ESCUELA ─────────────────────────────────────
 function vistaEscuela(){
   const esc=STATE.escuela,ests=STATE.allData[esc.id]||[];
   return`${header(esc.nombre,`${ests.length} estudiantes · Trayectorias Cuidadas Zona 5310 Oeste`)}
@@ -218,6 +234,11 @@ function vistaEscuela(){
       <button onclick="imprimirFicha()" class="btn-tab no-print" style="border-color:#6366f1;background:#6366f1;color:#fff">🖨️ Imprimir PDF</button>
     </div>
     ${leyenda()}
+    <!-- Filtro marca -->
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      ${[["todos","👥 Todos","#1e293b"],["regulares","📋 Sin marca","#0369a1"],["especiales","♿ CUD/PPI/MEMO2","#a21caf"]].map(([v,l,c])=>`
+        <button onclick="setState({filtroMarca:'${v}'})" style="padding:6px 14px;border-radius:8px;border:1.5px solid;font-weight:700;font-size:12px;cursor:pointer;font-family:'Source Sans 3',sans-serif;border-color:${STATE.filtroMarca===v?c:"#e2e8f0"};background:${STATE.filtroMarca===v?c:"#fff"};color:${STATE.filtroMarca===v?"#fff":"#475569"}">${l}</button>`).join("")}
+    </div>
     <div style="background:#fff;border-radius:16px;padding:22px;box-shadow:0 2px 16px #0001">
       ${STATE.loading?loader():STATE.tab==="carga"?vistaCarga():STATE.tab==="tabla"?vistaTablaGrado():vistaGraficos()}
     </div>
@@ -227,12 +248,14 @@ function vistaEscuela(){
 
 function vistaCarga(){
   const escId=STATE.escuela.id;
-  const ests=(STATE.allData[escId]||[])
-    .filter(e=>(!STATE.filtroGrado||e.grado===STATE.filtroGrado)&&(!STATE.busqEst||`${e.apellido} ${e.nombre}`.toLowerCase().includes(STATE.busqEst.toLowerCase())))
+  let ests=(STATE.allData[escId]||[]);
+  if(STATE.filtroMarca==="especiales")ests=ests.filter(e=>e.marca);
+  else if(STATE.filtroMarca==="regulares")ests=ests.filter(e=>!e.marca);
+  ests=ests.filter(e=>(!STATE.filtroGrado||e.grado===STATE.filtroGrado)&&(!STATE.busqEst||`${e.apellido} ${e.nombre}`.toLowerCase().includes(STATE.busqEst.toLowerCase())))
     .sort((a,b)=>a.apellido.localeCompare(b.apellido));
   return`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-      <input style="width:180px" value="${STATE.busqEst}" placeholder="Buscar estudiante..." oninput="setState({busqEst:this.value})"/>
+      <input style="width:160px" value="${STATE.busqEst}" placeholder="Buscar nombre..." oninput="setState({busqEst:this.value})"/>
       <select style="width:auto" onchange="setState({filtroGrado:this.value})">
         <option value="" ${!STATE.filtroGrado?"selected":""}>Todos los grados</option>
         ${GRADOS.map(g=>`<option ${STATE.filtroGrado===g?"selected":""}>${g}</option>`).join("")}
@@ -243,13 +266,14 @@ function vistaCarga(){
     <button class="btn-primary" onclick="abrirModal()">+ Agregar estudiante</button>
   </div>
   ${ests.length===0?`<div style="text-align:center;padding:48px;color:#94a3b8;border:2px dashed #f0abfc;border-radius:14px">
-    <div style="font-size:44px;margin-bottom:10px">👤</div><p style="font-weight:700">Sin estudiantes cargados</p>
-    <p style="font-size:13px">Hacé clic en "+ Agregar estudiante" para comenzar</p></div>`:
-  ests.map(e=>`<div style="background:#fdf4ff;border:1.5px solid #f0abfc44;border-radius:12px;padding:12px 16px;margin-bottom:8px">
+    <div style="font-size:44px;margin-bottom:10px">👤</div><p style="font-weight:700">Sin estudiantes cargados</p></div>`:
+  ests.map(e=>`<div style="background:${e.marca?"#fdf4ff":"#fdf4ff11"};border:1.5px solid ${e.marca?"#f0abfc":"#e2e8f0"};border-radius:12px;padding:12px 16px;margin-bottom:8px">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
       <div>
-        <div style="font-weight:700;font-size:14px;color:#1e293b">${e.apellido}, ${e.nombre}</div>
-        <div style="font-size:12px;color:#94a3b8">${e.grado}${e.seccion?` · Sección ${e.seccion}`:""}</div>
+        <div style="font-weight:700;font-size:14px;color:#1e293b;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          ${e.apellido}, ${e.nombre} ${e.marca?badgeMarca(e.marca):""}
+        </div>
+        <div style="font-size:12px;color:#94a3b8">${e.grado}${e.seccion?` · Sección ${e.seccion}`:""}${e.dni?` · DNI: ${e.dni}`:""}</div>
       </div>
       <div style="display:flex;gap:6px">
         <button onclick='editarEst(${JSON.stringify(e).replace(/'/g,"&#39;")})' style="background:#fdf4ff;color:#a21caf;border:1.5px solid #f0abfc;border-radius:7px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Source Sans 3',sans-serif">Editar</button>
@@ -273,6 +297,8 @@ function vistaTablaGrado(){
     <thead>
       <tr>
         <th style="background:#1e293b" rowspan="2">Alumno/a</th>
+        <th style="background:#1e293b" rowspan="2">DNI</th>
+        <th style="background:#a21caf;text-align:center" rowspan="2">♿</th>
         ${["1°","2°","3°"].includes(g)?`<th style="background:#7c3aed;text-align:center">✍️ Escritura</th>`:""}
         ${["1°","2°"].includes(g)?`<th style="background:#db2877;text-align:center">📖 Lectura</th>`:""}
         ${["3°","4°","5°","6°"].includes(g)?`<th style="background:#0ea5e9;text-align:center" colspan="3">📖 Fluidez</th>`:""}
@@ -280,15 +306,19 @@ function vistaTablaGrado(){
         <th style="background:#0369a1;text-align:center" colspan="${iM.length}">🔢 Matemática</th>
       </tr>
       <tr style="background:#334155">
+        <th style="padding:8px 10px;color:#fff;font-size:10px"></th>
+        <th style="padding:8px 10px;color:#fff;font-size:10px"></th>
         ${["1°","2°","3°"].includes(g)?`<th style="padding:8px 10px;color:#fff;font-size:10px">Nivel</th>`:""}
         ${["1°","2°"].includes(g)?`<th style="padding:8px 10px;color:#fff;font-size:10px">Nivel</th>`:""}
-        ${["3°","4°","5°","6°"].includes(g)?`<th style="padding:8px 10px;color:#fff;font-size:10px">Velocidad</th><th style="padding:8px 10px;color:#fff;font-size:10px">Precisión</th><th style="padding:8px 10px;color:#fff;font-size:10px">Prosodia</th>`:""}
+        ${["3°","4°","5°","6°"].includes(g)?`<th style="padding:8px 10px;color:#fff;font-size:10px">Vel.</th><th style="padding:8px 10px;color:#fff;font-size:10px">Prec.</th><th style="padding:8px 10px;color:#fff;font-size:10px">Pros.</th>`:""}
         ${[...iL,...iM].map(i=>`<th style="padding:8px 10px;color:#fff;font-size:10px;max-width:90px;white-space:normal;line-height:1.3;text-align:left">${i}</th>`).join("")}
       </tr>
     </thead>
     <tbody>
-      ${al.map((e,idx)=>`<tr style="background:${idx%2===0?"#fdf4ff":"#fff"}">
+      ${al.map((e,idx)=>`<tr style="background:${e.marca?"#fdf4ff":idx%2===0?"#f8fafc":"#fff"}">
         <td style="font-weight:700;white-space:nowrap">${e.apellido}, ${e.nombre}</td>
+        <td style="color:#64748b;font-size:11px">${e.dni||"—"}</td>
+        <td style="text-align:center">${e.marca?badgeMarca(e.marca):`<span style="color:#cbd5e1">—</span>`}</td>
         ${["1°","2°","3°"].includes(g)?`<td style="text-align:center">${badgeNivel(e[`escritura_${STATE.corte}`])}</td>`:""}
         ${["1°","2°"].includes(g)?`<td style="text-align:center">${badgeNivel(e[`lectura12_${STATE.corte}`])}</td>`:""}
         ${["3°","4°","5°","6°"].includes(g)?`<td style="text-align:center">${badge(e[`fluidez_Velocidad_${STATE.corte}`])}</td><td style="text-align:center">${badge(e[`fluidez_Precisión_${STATE.corte}`])}</td><td style="text-align:center">${badge(e[`fluidez_Prosodia_${STATE.corte}`])}</td>`:""}
@@ -300,8 +330,11 @@ function vistaTablaGrado(){
   </div>`;
 }
 
-function graficoBarra(titulo,etiquetas,counts,total,colors){
-  return`<div style="background:#f8fafc;border-radius:12px;padding:16px;border:1px solid #e2e8f0">
+function vistaGraficos(){
+  const ests=STATE.allData[STATE.escuela.id]||[];
+  const g=STATE.tablaGrado;
+  const estsG=ests.filter(e=>e.grado===g);
+  const graficoBarra=(titulo,etiquetas,counts,total,colors)=>`<div style="background:#f8fafc;border-radius:12px;padding:16px;border:1px solid #e2e8f0">
     <div style="font-weight:700;font-size:13px;color:#1e293b;margin-bottom:12px">${titulo}</div>
     ${etiquetas.map((et,i)=>{const pct=Math.round((counts[i]||0)/total*100);return`
       <div style="margin-bottom:8px">
@@ -309,12 +342,6 @@ function graficoBarra(titulo,etiquetas,counts,total,colors){
         <div style="height:10px;background:#e2e8f0;border-radius:5px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${colors[i%colors.length]};border-radius:5px"></div></div>
       </div>`;}).join("")}
   </div>`;
-}
-
-function vistaGraficos(){
-  const ests=STATE.allData[STATE.escuela.id]||[];
-  const g=STATE.tablaGrado;
-  const estsG=ests.filter(e=>e.grado===g);
   return`<div>
     <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
       ${GRADOS.map(gr=>`<button onclick="setState({tablaGrado:'${gr}'})" style="padding:6px 16px;border-radius:8px;border:1.5px solid;font-weight:700;font-size:13px;cursor:pointer;font-family:'Source Sans 3',sans-serif;border-color:${g===gr?"#a21caf":"#e2e8f0"};background:${g===gr?"#a21caf":"#fff"};color:${g===gr?"#fff":"#475569"}">${gr}</button>`).join("")}
@@ -330,33 +357,33 @@ function vistaGraficos(){
 }
 
 function modalEstudiante(){
-  const m=STATE.modal,e=m.est||{apellido:"",nombre:"",grado:STATE.filtroGrado||"",seccion:"",indicadores:{},observaciones:""};
+  const m=STATE.modal,e=m.est||{apellido:"",nombre:"",dni:"",grado:STATE.filtroGrado||"",seccion:"",marca:"",indicadores:{},observaciones:""};
   const g=e.grado;
-  const bloqueEscritura=()=>{
+  const bEsc=()=>{
     if(!["1°","2°","3°"].includes(g))return"";
     return`<div style="margin-bottom:18px">
       <div style="font-weight:700;color:#7c3aed;font-size:13px;margin-bottom:10px;padding-left:10px;border-left:3px solid #7c3aed">✍️ Nivel de Escritura (Kauffman)</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
         ${CORTES.map(c=>{const v=e[`escritura_${c}`]||"";return`<div style="background:#f8fafc;border-radius:8px;padding:8px 10px">
           <div style="font-size:11px;color:#7c3aed;margin-bottom:5px;font-weight:700">📅 ${c}</div>
-          <select data-key="escritura_${c}" onchange="updateExtra('escritura_${c}',this.value)" style="font-size:12px;font-weight:700;border-radius:8px;padding:4px 6px;border:1.5px solid #7c3aed44;background:#f5f3ff;color:#7c3aed;width:auto">
+          <select data-key="escritura_${c}" onchange="updateExtra('escritura_${c}',this.value)" style="font-size:11px;border-radius:8px;padding:4px 6px;border:1.5px solid #7c3aed44;background:#f5f3ff;color:#7c3aed;width:auto;font-weight:700">
             <option value="">— nivel —</option>${NIV_ESCRITURA.map(n=>`<option ${v===n?"selected":""}>${n}</option>`).join("")}
           </select></div>`;}).join("")}
       </div></div>`;
   };
-  const bloqueLectura12=()=>{
+  const bLec=()=>{
     if(!["1°","2°"].includes(g))return"";
     return`<div style="margin-bottom:18px">
       <div style="font-weight:700;color:#db2877;font-size:13px;margin-bottom:10px;padding-left:10px;border-left:3px solid #db2877">📖 Nivel de Lectura</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
         ${CORTES.map(c=>{const v=e[`lectura12_${c}`]||"";return`<div style="background:#f8fafc;border-radius:8px;padding:8px 10px">
           <div style="font-size:11px;color:#db2877;margin-bottom:5px;font-weight:700">📅 ${c}</div>
-          <select data-key="lectura12_${c}" onchange="updateExtra('lectura12_${c}',this.value)" style="font-size:12px;font-weight:700;border-radius:8px;padding:4px 6px;border:1.5px solid #db287744;background:#fdf2f8;color:#db2877;width:auto">
+          <select data-key="lectura12_${c}" onchange="updateExtra('lectura12_${c}',this.value)" style="font-size:11px;border-radius:8px;padding:4px 6px;border:1.5px solid #db287744;background:#fdf2f8;color:#db2877;width:auto;font-weight:700">
             <option value="">— nivel —</option>${NIV_LECTURA_12.map(n=>`<option ${v===n?"selected":""}>${n}</option>`).join("")}
           </select></div>`;}).join("")}
       </div></div>`;
   };
-  const bloqueFluidez=()=>{
+  const bFlu=()=>{
     if(!["3°","4°","5°","6°"].includes(g))return"";
     return`<div style="margin-bottom:18px">
       <div style="font-weight:700;color:#0ea5e9;font-size:13px;margin-bottom:10px;padding-left:10px;border-left:3px solid #0ea5e9">📖 Fluidez Lectora</div>
@@ -365,13 +392,13 @@ function modalEstudiante(){
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
           ${CORTES.map(c=>{const k=`fluidez_${dim}_${c}`;const v=e[k]||"";return`<div style="background:#f8fafc;border-radius:8px;padding:8px 10px">
             <div style="font-size:11px;color:#0ea5e9;margin-bottom:5px;font-weight:700">📅 ${c}</div>
-            <select data-key="${k}" onchange="updateExtra('${k}',this.value)" style="font-size:12px;font-weight:700;border-radius:8px;padding:4px 6px;border:1.5px solid #0ea5e944;background:#f0f9ff;color:#0ea5e9;width:auto">
+            <select data-key="${k}" onchange="updateExtra('${k}',this.value)" style="font-size:11px;border-radius:8px;padding:4px 6px;border:1.5px solid #0ea5e944;background:#f0f9ff;color:#0ea5e9;width:auto;font-weight:700">
               <option value="">— logro —</option>${LOGRO.map(l=>`<option ${v===l?"selected":""}>${l}</option>`).join("")}
             </select></div>`;}).join("")}
         </div></div>`).join("")}
     </div>`;
   };
-  const bloqueInds=(area,color,emoji)=>{
+  const bInd=(area,color,emoji)=>{
     const inds=INDS[area][g]||[];
     if(!inds.length)return"";
     return`<div style="margin-bottom:18px">
@@ -382,7 +409,7 @@ function modalEstudiante(){
           const fg=v?{Consolidado:"#16a34a","En proceso":"#d97706",Incipiente:"#dc2626"}[v]:"#94a3b8";
           return`<div style="background:#f8fafc;border-radius:8px;padding:8px 10px">
             <div style="font-size:11px;color:#475569;margin-bottom:5px;font-weight:600">${ind}</div>
-            <select data-ind="${k}" onchange="updateInd('${k}',this.value)" style="background:${bg};color:${fg};border:1.5px solid ${fg}44;border-radius:8px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Source Sans 3',sans-serif;width:auto">
+            <select data-ind="${k}" onchange="updateInd('${k}',this.value)" style="background:${bg};color:${fg};border:1.5px solid ${fg}44;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Source Sans 3',sans-serif;width:auto">
               <option value="">— seleccionar —</option>${LOGRO.map(l=>`<option value="${l}" ${v===l?"selected":""}>${l}</option>`).join("")}
             </select></div>`;}).join("")}
       </div></div>`;
@@ -393,7 +420,7 @@ function modalEstudiante(){
         <h3 style="font-family:'Playfair Display',serif;margin:0;font-size:20px;color:#1e293b">${m.mode==="new"?"Nuevo":"Editar"} estudiante</h3>
         <button onclick="cerrarModal()" style="background:none;border:none;font-size:26px;cursor:pointer;color:#94a3b8">×</button>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 100px 80px 120px;gap:10px;margin-bottom:20px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 90px 70px 110px;gap:10px;margin-bottom:16px">
         <div><label style="display:block;font-size:10px;font-weight:700;color:#94a3b8;margin-bottom:3px;text-transform:uppercase">Apellido</label>
           <input id="m-apellido" value="${e.apellido}" placeholder="Apellido"/></div>
         <div><label style="display:block;font-size:10px;font-weight:700;color:#94a3b8;margin-bottom:3px;text-transform:uppercase">Nombre</label>
@@ -402,26 +429,26 @@ function modalEstudiante(){
           <select id="m-grado" onchange="cambiarGrado(this.value)">
             <option value="">—</option>${GRADOS.map(gr=>`<option ${e.grado===gr?"selected":""}>${gr}</option>`).join("")}
           </select></div>
-        <div><label style="display:block;font-size:10px;font-weight:700;color:#94a3b8;margin-bottom:3px;text-transform:uppercase">Sección</label>
+        <div><label style="display:block;font-size:10px;font-weight:700;color:#94a3b8;margin-bottom:3px;text-transform:uppercase">Secc.</label>
           <select id="m-seccion" style="width:auto">
             <option value="">—</option>${["A","B","C","D","E"].map(s=>`<option ${(e.seccion||"")===s?"selected":""}>${s}</option>`).join("")}
           </select></div>
         <div><label style="display:block;font-size:10px;font-weight:700;color:#94a3b8;margin-bottom:3px;text-transform:uppercase">DNI</label>
           <input id="m-dni" value="${e.dni||""}" placeholder="12345678" maxlength="8"/></div>
       </div>
-      <!-- Marca especial -->
+      <!-- CUD/PPI/MEMO2 -->
       <div style="background:#fdf4ff;border:1.5px solid #f0abfc;border-radius:12px;padding:14px;margin-bottom:18px">
         <div style="font-size:12px;font-weight:700;color:#a21caf;margin-bottom:10px">♿ ¿Tiene certificado o programa especial?</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <button onclick="toggleMarcaZ('')" style="padding:6px 14px;border-radius:8px;border:1.5px solid;font-weight:700;font-size:12px;cursor:pointer;font-family:'Source Sans 3',sans-serif;border-color:${!e.marca?"#1e293b":"#e2e8f0"};background:${!e.marca?"#1e293b":"#fff"};color:${!e.marca?"#fff":"#475569"}">Sin marca</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button onclick="toggleMarca('')" style="padding:6px 14px;border-radius:8px;border:1.5px solid;font-weight:700;font-size:12px;cursor:pointer;font-family:'Source Sans 3',sans-serif;border-color:${!e.marca?"#1e293b":"#e2e8f0"};background:${!e.marca?"#1e293b":"#fff"};color:${!e.marca?"#fff":"#475569"}">Sin marca</button>
           ${MARCAS.map(mc=>{const cols={"CUD":"#7c3aed","PPI":"#0ea5e9","MEMO2":"#ea580c"};const col=cols[mc];
-            return`<button onclick="toggleMarcaZ('${mc}')" style="padding:6px 14px;border-radius:8px;border:1.5px solid;font-weight:700;font-size:12px;cursor:pointer;font-family:'Source Sans 3',sans-serif;border-color:${e.marca===mc?col:"#e2e8f0"};background:${e.marca===mc?col:"#fff"};color:${e.marca===mc?"#fff":"#475569"}">♿ ${mc}</button>`;}).join("")}
+            return`<button onclick="toggleMarca('${mc}')" style="padding:6px 14px;border-radius:8px;border:1.5px solid;font-weight:700;font-size:12px;cursor:pointer;font-family:'Source Sans 3',sans-serif;border-color:${e.marca===mc?col:"#e2e8f0"};background:${e.marca===mc?col:"#fff"};color:${e.marca===mc?"#fff":"#475569"}">♿ ${mc}</button>`;}).join("")}
         </div>
       </div>
-      ${g?bloqueEscritura()+bloqueLectura12()+bloqueFluidez()+bloqueInds("lengua","#6366f1","📚")+bloqueInds("matematica","#0ea5e9","🔢"):""}
+      ${g?bEsc()+bLec()+bFlu()+bInd("lengua","#6366f1","📚")+bInd("matematica","#0ea5e9","🔢"):""}
       <div style="margin-top:14px">
-        <label style="display:block;font-size:10px;font-weight:700;color:#94a3b8;margin-bottom:3px;text-transform:uppercase">Observaciones</label>
-        <textarea id="m-obs" rows="2" placeholder="Notas sobre la trayectoria...">${e.observaciones||""}</textarea>
+        <label style="display:block;font-size:10px;font-weight:700;color:#94a3b8;margin-bottom:3px;text-transform:uppercase">Observaciones / Trayectoria</label>
+        <textarea id="m-obs" rows="2" placeholder="Notas sobre la trayectoria del estudiante...">${e.observaciones||""}</textarea>
       </div>
       <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
         <button class="btn-secondary" onclick="cerrarModal()">Cancelar</button>
@@ -443,12 +470,13 @@ function modalConfirmarBorrar(){
   </div></div>`;
 }
 
+// ── VISTA SUPERVISORA ─────────────────────────────────
 function vistaSupervisor(){
   const area=STATE.supArea,g=STATE.supGrado;
   const inds=(area==="lengua"?INDS.lengua:INDS.matematica)[g]||[];
   const stats=id=>{
     const ests=(STATE.allData[id]||[]).filter(e=>e.grado===g);
-    return{total:ests.length,porInd:inds.map(ind=>{
+    return{total:ests.length,esp:ests.filter(e=>e.marca).length,porInd:inds.map(ind=>{
       const k=`${area}_${g}_${ind}`,vs=ests.map(e=>e.indicadores?.[k]).filter(Boolean);
       return{ind,c:vs.filter(v=>v==="Consolidado").length,p:vs.filter(v=>v==="En proceso").length,i:vs.filter(v=>v==="Incipiente").length,total:vs.length};
     })};
@@ -458,8 +486,16 @@ function vistaSupervisor(){
     return`<div style="background:#fdf4ff;border:2px solid #f0abfc;border-radius:14px;padding:20px;margin-bottom:16px">
       <h4 style="font-family:'Playfair Display',serif;margin:0 0 14px;color:#a21caf;font-size:17px">${STATE.supSel.nombre} · ${area==="lengua"?"📚 Lengua":"🔢 Matemática"} · ${g}</h4>
       ${ests.length===0?`<p style="color:#94a3b8">Sin datos.</p>`:`<div style="overflow-x:auto"><table style="width:100%;border-collapse:separate;border-spacing:0;font-size:11px">
-        <thead><tr style="background:#a21caf"><th>Alumno/a</th>${inds.map(i=>`<th style="padding:8px 10px;color:#fff;font-size:10px;white-space:normal;line-height:1.3;text-align:left">${i}</th>`).join("")}</tr></thead>
-        <tbody>${ests.map((e,idx)=>`<tr style="background:${idx%2===0?"#fff":"#fdf4ff"}"><td style="font-weight:700;white-space:nowrap">${e.apellido}, ${e.nombre}</td>${inds.map(ind=>`<td style="text-align:center">${badge(e.indicadores?.[`${area}_${g}_${ind}`])}</td>`).join("")}</tr>`).join("")}</tbody>
+        <thead><tr style="background:#a21caf">
+          <th>Alumno/a</th><th style="padding:8px 10px;color:#fff;font-size:10px">DNI</th><th style="padding:8px 10px;color:#fff;font-size:10px">♿</th>
+          ${inds.map(i=>`<th style="padding:8px 10px;color:#fff;font-size:10px;white-space:normal;line-height:1.3;text-align:left">${i}</th>`).join("")}
+        </tr></thead>
+        <tbody>${ests.map((e,idx)=>`<tr style="background:${e.marca?"#fdf4ff":idx%2===0?"#fff":"#fdf4ff11"}">
+          <td style="font-weight:700;white-space:nowrap">${e.apellido}, ${e.nombre}</td>
+          <td style="color:#64748b;font-size:11px">${e.dni||"—"}</td>
+          <td style="text-align:center">${e.marca?badgeMarca(e.marca):`<span style="color:#cbd5e1">—</span>`}</td>
+          ${inds.map(ind=>`<td style="text-align:center">${badge(e.indicadores?.[`${area}_${g}_${ind}`])}</td>`).join("")}
+        </tr>`).join("")}</tbody>
       </table></div>`}
     </div>`;
   })():"";
@@ -467,6 +503,14 @@ function vistaSupervisor(){
   return`${header("Panel Inspectora · Trayectorias Cuidadas 5310 Oeste","Instituciones Departamento Santa María")}
   <div style="padding:24px;max-width:1400px;margin:0 auto">
     ${leyenda()}
+    <!-- Búsqueda por DNI -->
+    <div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:16px;border:1.5px solid #f0abfc;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <span style="font-size:13px;font-weight:700;color:#a21caf">🔍 Buscar por DNI:</span>
+      <input style="width:180px" value="${STATE.busqDNI||""}" placeholder="Ingresá el DNI..." oninput="buscarDNI(this.value)"/>
+      ${STATE.busqDNI?`<button onclick="setState({busqDNI:''})" style="background:#fef2f2;color:#ef4444;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Source Sans 3',sans-serif">✕ Limpiar</button>`:""}
+    </div>
+    ${STATE.busqDNI?resultadoDNI():""}
+
     <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:flex-end">
       <div><div style="font-size:10px;font-weight:700;color:#94a3b8;margin-bottom:3px;text-transform:uppercase">Área</div>
         <div style="display:flex;gap:6px">
@@ -490,20 +534,42 @@ function vistaSupervisor(){
           <th style="text-align:center">🔗 App</th>
           ${inds.map(i=>`<th style="padding:8px 10px;color:#fff;font-size:10px;max-width:110px;white-space:normal;line-height:1.3;text-align:left">${i}</th>`).join("")}
         </tr></thead>
-        <tbody>${ESCUELAS.map((esc,idx)=>{const{total,porInd}=stats(esc.id);const ac=STATE.supSel?.id===esc.id;
+        <tbody>${ESCUELAS.map((esc,idx)=>{
+          const{total,esp,porInd}=stats(esc.id);
+          const ac=STATE.supSel?.id===esc.id;
           const ests=(STATE.allData[esc.id]||[]).filter(e=>e.grado===g);
-          const esp=ests.filter(e=>e.marca).length;
           return`<tr style="background:${ac?"#fdf4ff":idx%2===0?"#f8fafc":"#fff"};cursor:pointer" onclick="toggleSupSel('${esc.id}')">
             <td style="font-weight:700;color:#1e293b"><span style="margin-right:6px;color:#94a3b8;font-size:10px">${ac?"▼":"▶"}</span>${esc.nombre}</td>
             <td style="text-align:center;font-weight:700">${total>0?total:`<span style="color:#cbd5e1">—</span>`}</td>
             <td style="text-align:center">${esp>0?`<span style="color:#a21caf;font-size:11px;font-weight:700">♿ ${esp}</span>`:`<span style="color:#cbd5e1">—</span>`}</td>
             <td style="text-align:center">${semaforo(ests,"lengua",g)}</td>
             <td style="text-align:center">${semaforo(ests,"matematica",g)}</td>
-            <td style="text-align:center">${esc.app?`<a href="${esc.app}" target="_blank" style="background:#059669;color:#fff;border:none;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:700;cursor:pointer;text-decoration:none;font-family:'Source Sans 3',sans-serif">Ver App 🔗</a>`:`<span style="color:#cbd5e1;font-size:10px">Próximamente</span>`}</td>
+            <td style="text-align:center" onclick="event.stopPropagation()">${esc.app
+              ?`<a href="${esc.app}" target="_blank" style="background:#059669;color:#fff;border-radius:6px;padding:3px 8px;font-size:10px;font-weight:700;cursor:pointer;text-decoration:none">Ver App 🔗</a>`
+              :`<span style="color:#cbd5e1;font-size:10px">Próximamente</span>`}
+            </td>
             ${porInd.map(({c,p,i:iv,total:t})=>`<td>${barra(c,p,iv,t)}</td>`).join("")}
           </tr>`;}).join("")}
         </tbody></table></div>`}
     </div>
+  </div>`;
+}
+
+function resultadoDNI(){
+  const dni=STATE.busqDNI.trim();
+  if(!dni)return"";
+  const resultados=[];
+  ESCUELAS.forEach(esc=>{
+    const ests=(STATE.allData[esc.id]||[]).filter(e=>e.dni&&e.dni.includes(dni));
+    ests.forEach(e=>resultados.push({...e,nombreEscuela:esc.nombre}));
+  });
+  if(!resultados.length)return`<div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:16px;text-align:center;color:#94a3b8;border:1px solid #e2e8f0">No se encontró ningún estudiante con ese DNI</div>`;
+  return`<div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:16px;border:1.5px solid #f0abfc">
+    <div style="font-weight:700;color:#a21caf;margin-bottom:10px">Resultados para DNI: ${dni}</div>
+    ${resultados.map(e=>`<div style="background:#fdf4ff;border-radius:8px;padding:10px 14px;margin-bottom:8px">
+      <div style="font-weight:700;font-size:14px;color:#1e293b">${e.apellido}, ${e.nombre} ${e.marca?badgeMarca(e.marca):""}</div>
+      <div style="font-size:12px;color:#64748b">${e.nombreEscuela} · ${e.grado}${e.seccion?" · Sección "+e.seccion:""} · DNI: ${e.dni}</div>
+    </div>`).join("")}
   </div>`;
 }
 
@@ -521,22 +587,24 @@ function imprimirFicha(){
   <div style="text-align:center;margin-bottom:20px;border-bottom:2px solid #a21caf;padding-bottom:14px">
     <div style="font-size:10px;color:#94a3b8;letter-spacing:2px;text-transform:uppercase">Sede de Inspección 5310 · Zona Oeste · Instituciones Departamento Santa María</div>
     <div style="font-size:22px;font-weight:900;color:#a21caf">Trayectorias Cuidadas</div>
-    <div style="font-size:13px;color:#475569">Supervisora: Gabriela de los Ángeles Navarrete · Docente Facilitadora: Gabriela Pafume · Programa M+M</div>
+    <div style="font-size:13px;color:#475569">Supervisora: Gabriela de los Ángeles Navarrete · Lic. Gabriela Pafume</div>
     <div style="font-size:12px;color:#94a3b8">Cortes: Mayo · Agosto · Diciembre · Año ${new Date().getFullYear()}</div>
   </div>
   ${ests.map(e=>{const g=e.grado;const iL=INDS.lengua[g]||[],iM=INDS.matematica[g]||[];
-    return`<div style="border:1.5px solid #f0abfc;border-radius:10px;padding:16px;margin-bottom:14px;page-break-inside:avoid">
-      <div style="display:flex;justify-content:space-between;margin-bottom:10px;border-bottom:1px solid #f0abfc;padding-bottom:8px">
-        <div><b style="font-size:15px">${e.apellido}, ${e.nombre}</b><br/><span style="font-size:12px;color:#64748b">${e.grado}${e.seccion?" · Sección "+e.seccion:""} · ${esc.nombre}</span></div>
+    return`<div style="border:1.5px solid ${e.marca?"#f0abfc":"#e2e8f0"};border-radius:10px;padding:16px;margin-bottom:14px;page-break-inside:avoid">
+      <div style="display:flex;justify-content:space-between;margin-bottom:10px;border-bottom:1px solid #e2e8f0;padding-bottom:8px;align-items:center;flex-wrap:wrap;gap:6px">
+        <div><b style="font-size:15px">${e.apellido}, ${e.nombre}</b> ${e.marca?`<span style="background:#a21caf18;color:#a21caf;border:1px solid #a21caf44;border-radius:20px;padding:1px 8px;font-size:10px;font-weight:800">♿ ${e.marca}</span>`:""}
+        <br/><span style="font-size:12px;color:#64748b">${e.grado}${e.seccion?" · Sección "+e.seccion:""} · ${esc.nombre}</span></div>
+        ${e.dni?`<div style="background:#fdf4ff;border:1px solid #f0abfc;border-radius:8px;padding:4px 10px;font-size:12px;color:#a21caf;font-weight:700">DNI: ${e.dni}</div>`:""}
       </div>
       ${["1°","2°","3°"].includes(g)?`<div style="margin-bottom:8px"><b style="font-size:11px;color:#7c3aed">✍️ NIVEL DE ESCRITURA</b><br/>${CORTES.map(c=>`<span style="font-size:11px;margin-right:12px"><b>${c}:</b> <span style="color:${cN(e["escritura_"+c])}">${e["escritura_"+c]||"—"}</span></span>`).join("")}</div>`:""}
       ${["1°","2°"].includes(g)?`<div style="margin-bottom:8px"><b style="font-size:11px;color:#db2877">📖 NIVEL DE LECTURA</b><br/>${CORTES.map(c=>`<span style="font-size:11px;margin-right:12px"><b>${c}:</b> <span style="color:${cN(e["lectura12_"+c])}">${e["lectura12_"+c]||"—"}</span></span>`).join("")}</div>`:""}
-      ${["3°","4°","5°","6°"].includes(g)?`<div style="margin-bottom:8px"><b style="font-size:11px;color:#0ea5e9">📖 FLUIDEZ LECTORA</b><br/>${["Velocidad","Precisión","Prosodia"].map(dim=>`<div style="font-size:11px"><b>${dim}:</b> ${CORTES.map(c=>`<span style="margin-right:10px"><b>${c}:</b> <span style="color:${cL(e["fluidez_"+dim+"_"+c])}">${e["fluidez_"+dim+"_"+c]||"—"}</span></span>`).join("")}</div>`).join("")}</div>`:""}
+      ${["3°","4°","5°","6°"].includes(g)?`<div style="margin-bottom:8px"><b style="font-size:11px;color:#0ea5e9">📖 FLUIDEZ</b><br/>${["Velocidad","Precisión","Prosodia"].map(dim=>`<div style="font-size:11px"><b>${dim}:</b> ${CORTES.map(c=>`<span style="margin-right:10px"><b>${c}:</b> <span style="color:${cL(e["fluidez_"+dim+"_"+c])}">${e["fluidez_"+dim+"_"+c]||"—"}</span></span>`).join("")}</div>`).join("")}</div>`:""}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
-        <div><b style="font-size:11px;color:#4338ca">📚 LENGUA</b>${iL.map(ind=>`<div style="font-size:10px;color:#475569;margin-top:3px">${ind}: <b style="color:${cL(e.indicadores?.["lengua_"+g+"_"+ind])}">${e.indicadores?.["lengua_"+g+"_"+ind]||"—"}</b></div>`).join("")}</div>
-        <div><b style="font-size:11px;color:#0369a1">🔢 MATEMÁTICA</b>${iM.map(ind=>`<div style="font-size:10px;color:#475569;margin-top:3px">${ind}: <b style="color:${cL(e.indicadores?.["matematica_"+g+"_"+ind])}">${e.indicadores?.["matematica_"+g+"_"+ind]||"—"}</b></div>`).join("")}</div>
+        <div><b style="font-size:11px;color:#4338ca">📚 LENGUA</b>${iL.map(ind=>`<div style="font-size:10px;margin-top:3px">${ind}: <b style="color:${cL(e.indicadores?.["lengua_"+g+"_"+ind])}">${e.indicadores?.["lengua_"+g+"_"+ind]||"—"}</b></div>`).join("")}</div>
+        <div><b style="font-size:11px;color:#0369a1">🔢 MATEMÁTICA</b>${iM.map(ind=>`<div style="font-size:10px;margin-top:3px">${ind}: <b style="color:${cL(e.indicadores?.["matematica_"+g+"_"+ind])}">${e.indicadores?.["matematica_"+g+"_"+ind]||"—"}</b></div>`).join("")}</div>
       </div>
-      ${e.observaciones?`<div style="margin-top:8px;font-size:11px;color:#64748b;font-style:italic;border-top:1px solid #f0abfc;padding-top:6px">📝 ${e.observaciones}</div>`:""}
+      ${e.observaciones?`<div style="margin-top:8px;font-size:11px;color:#64748b;font-style:italic;border-top:1px solid #e2e8f0;padding-top:6px">📝 ${e.observaciones}</div>`:""}
     </div>`;}).join("")}
   </body></html>`);
   win.document.close();
@@ -545,7 +613,7 @@ function imprimirFicha(){
 
 async function selEscuela(id){
   const esc=ESCUELAS.find(e=>e.id===id);
-  setState({modo:"escuela",escuela:esc,tab:"carga",loading:true,filtroGrado:"",busqEst:""});
+  setState({modo:"escuela",escuela:esc,tab:"carga",loading:true,filtroGrado:"",busqEst:"",filtroMarca:"todos"});
   const data=await dbGet(`esc-${id}`);
   setState({allData:{...STATE.allData,[id]:data?JSON.parse(data):[]},loading:false});
 }
@@ -563,9 +631,9 @@ function confirmarBorrar(est){setState({del:est});}
 function cambiarGrado(grado){STATE.modal={...STATE.modal,est:{...(STATE.modal.est||{}),grado,indicadores:{}}};render();}
 function updateInd(key,val){if(STATE.modal)STATE.modal.est.indicadores={...(STATE.modal.est.indicadores||{}),[key]:val};}
 function updateExtra(key,val){if(STATE.modal)STATE.modal.est={...STATE.modal.est,[key]:val};}
+function toggleMarca(marca){if(STATE.modal){STATE.modal.est={...STATE.modal.est,marca};render();}}
 function toggleSupSel(id){const esc=ESCUELAS.find(e=>e.id===id);setState({supSel:STATE.supSel?.id===id?null:esc});}
-
-function toggleMarcaZ(marca){if(STATE.modal){STATE.modal.est={...STATE.modal.est,marca};render();}}
+function buscarDNI(val){setState({busqDNI:val});}
 
 async function guardarEstudiante(){
   const m=STATE.modal;
